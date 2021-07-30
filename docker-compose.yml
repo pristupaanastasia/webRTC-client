@@ -6,14 +6,19 @@ services:
     hostname: answer
     restart: always
     ports:
-      - 60000:60000
-
+      - "6060:6060"
+    networks:
+      - custom
   offer:
-    depends_on:
-      - answer
     container_name: offer
     build: ./offer
     hostname: offer
     restart: always
     ports:
-      - 50000:50000
+      - "5050:5050"
+    networks:
+      - custom
+
+networks:
+  custom:
+    driver: bridge

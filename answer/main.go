@@ -30,8 +30,8 @@ func signalCandidate(addr string, c *webrtc.ICECandidate) error {
 }
 
 func main() { // nolint:gocognit
-	offerAddr := flag.String("offer-address", "localhost:50000", "Address that the Offer HTTP server is hosted on.")
-	answerAddr := flag.String("answer-address", ":60000", "Address that the Answer HTTP server is hosted on.")
+	offerAddr := flag.String("offer-address", "localhost:5050", "Address that the Offer HTTP server is hosted on.")
+	answerAddr := flag.String("answer-address", "localhost:6060", "Address that the Answer HTTP server is hosted on.")
 	flag.Parse()
 
 	var candidatesMux sync.Mutex
@@ -57,7 +57,7 @@ func main() { // nolint:gocognit
 			fmt.Printf("cannot close peerConnection: %v\n", err)
 		}
 	}()
-	go func() { panic(http.ListenAndServe(*answerAddr, nil)) }()
+
 	// When an ICE candidate is available send to the other Pion instance
 	// the other Pion instance will add this candidate by calling AddICECandidate
 	peerConnection.OnICECandidate(func(c *webrtc.ICECandidate) {
@@ -88,7 +88,7 @@ func main() { // nolint:gocognit
 			panic(candidateErr)
 		}
 	})
-
+	log.Println(*answerAddr)
 	// A HTTP handler that processes a SessionDescription given to us from the other Pion process
 	http.HandleFunc("/sdp", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("sdp")
@@ -176,5 +176,5 @@ func main() { // nolint:gocognit
 
 	// Start HTTP server that accepts requests from the offer process to exchange SDP and Candidates
 	//http.ListenAndServe(*answerAddr, nil)
-	select {}
+	http.ListenAndServe(*answerAddr, nil)
 }

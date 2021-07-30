@@ -29,8 +29,8 @@ func signalCandidate(addr string, c *webrtc.ICECandidate) error {
 }
 
 func main() { //nolint:gocognit
-	offerAddr := flag.String("offer-address", ":50000", "Address that the Offer HTTP server is hosted on.")
-	answerAddr := flag.String("answer-address", "127.0.0.1:60000", "Address that the Answer HTTP server is hosted on.")
+	offerAddr := flag.String("offer-address", "localhost:5050", "Address that the Offer HTTP server is hosted on.")
+	answerAddr := flag.String("answer-address", "localhost:6060", "Address that the Answer HTTP server is hosted on.")
 	flag.Parse()
 
 	var candidatesMux sync.Mutex
@@ -111,7 +111,6 @@ func main() { //nolint:gocognit
 		}
 	})
 	// Start HTTP server that accepts requests from the answer process
-	go func() { panic(http.ListenAndServe(*offerAddr, nil)) }()
 
 	// Create a datachannel with label 'data'
 	dataChannel, err := peerConnection.CreateDataChannel("data", nil)
@@ -170,13 +169,25 @@ func main() { //nolint:gocognit
 	if err != nil {
 		panic(err)
 	}
+
 	resp, err := http.Post(fmt.Sprintf("http://%s/sdp", *answerAddr), "application/json; charset=utf-8", bytes.NewReader(payload)) // nolint:noctx
 	if err != nil {
 		log.Println(err)
 	} else if err := resp.Body.Close(); err != nil {
 		log.Println(err)
 	}
+	go func() {
+		if err != nil {
+			resp, err := http.Post(fmt.Sprintf("http://%s/sdp", *answerAddr), "application/json; charset=utf-8", bytes.NewReader(payload)) // nolint:noctx
+			if err != nil {
+				log.Println(err)
+			} else if err := resp.Body.Close(); err != nil {
+				log.Println(err)
+			}
+		}
+	}()
 	//http.ListenAndServe(*offerAddr, nil)
 	// Block forever
-	select {}
+	http.ListenAndServe(*offerAddr, nil)
+
 }
