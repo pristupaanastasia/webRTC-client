@@ -30,8 +30,8 @@ func signalCandidate(addr string, c *webrtc.ICECandidate) error {
 }
 
 func main() { // nolint:gocognit
-	offerAddr := flag.String("offer-address", "localhost:5050", "Address that the Offer HTTP server is hosted on.")
-	answerAddr := flag.String("answer-address", "localhost:6060", "Address that the Answer HTTP server is hosted on.")
+	offerAddr := flag.String("offer-address", "0.0.0.0:5050", "Address that the Offer HTTP server is hosted on.")
+	answerAddr := flag.String("answer-address", "0.0.0.0:6060", "Address that the Answer HTTP server is hosted on.")
 	flag.Parse()
 
 	var candidatesMux sync.Mutex
@@ -81,6 +81,7 @@ func main() { // nolint:gocognit
 	// candidates which may be slower
 	http.HandleFunc("/candidate", func(w http.ResponseWriter, r *http.Request) {
 		candidate, candidateErr := ioutil.ReadAll(r.Body)
+
 		if candidateErr != nil {
 			panic(candidateErr)
 		}
@@ -93,12 +94,14 @@ func main() { // nolint:gocognit
 	http.HandleFunc("/sdp", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("sdp")
 		sdp := webrtc.SessionDescription{}
+
 		if err := json.NewDecoder(r.Body).Decode(&sdp); err != nil {
 			panic(err)
 		}
 
+		log.Println("sdp answer", sdp.SDP, sdp.Type)
 		if err := peerConnection.SetRemoteDescription(sdp); err != nil {
-			panic(err)
+			panic(err) //тут ошибка
 		}
 
 		// Create an answer to send to the other process
@@ -107,6 +110,7 @@ func main() { // nolint:gocognit
 			panic(err)
 		}
 
+		log.Println("aswer", answer.SDP, answer.Type)
 		// Send our answer to the HTTP server listening in the other process
 		payload, err := json.Marshal(answer)
 		if err != nil {
@@ -176,5 +180,6 @@ func main() { // nolint:gocognit
 
 	// Start HTTP server that accepts requests from the offer process to exchange SDP and Candidates
 	//http.ListenAndServe(*answerAddr, nil)
-	http.ListenAndServe(*answerAddr, nil)
+	log.Println(http.ListenAndServe(*answerAddr, nil))
+	log.Println("kek")
 }

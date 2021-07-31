@@ -7,8 +7,6 @@ services:
     restart: always
     ports:
       - "6060:6060"
-    networks:
-      - custom
   offer:
     container_name: offer
     build: ./offer
@@ -16,9 +14,5 @@ services:
     restart: always
     ports:
       - "5050:5050"
-    networks:
-      - custom
-
-networks:
-  custom:
-    driver: bridge
+    depends_on:
+      - "answer"

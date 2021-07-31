@@ -6,4 +6,4 @@ COPY . .
 RUN go mod download
 RUN go build -o main .
 ENTRYPOINT go run main.go
-
+EXPOSE 5050

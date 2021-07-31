@@ -29,8 +29,8 @@ func signalCandidate(addr string, c *webrtc.ICECandidate) error {
 }
 
 func main() { //nolint:gocognit
-	offerAddr := flag.String("offer-address", "localhost:5050", "Address that the Offer HTTP server is hosted on.")
-	answerAddr := flag.String("answer-address", "localhost:6060", "Address that the Answer HTTP server is hosted on.")
+	offerAddr := flag.String("offer-address", "0.0.0.0:5050", "Address that the Offer HTTP server is hosted on.")
+	answerAddr := flag.String("answer-address", "0.0.0.0:6060", "Address that the Answer HTTP server is hosted on.")
 	flag.Parse()
 
 	var candidatesMux sync.Mutex
@@ -93,6 +93,7 @@ func main() { //nolint:gocognit
 	// A HTTP handler that processes a SessionDescription given to us from the other Pion process
 	http.HandleFunc("/sdp", func(w http.ResponseWriter, r *http.Request) {
 		sdp := webrtc.SessionDescription{}
+		log.Println("sdp offer", sdp.SDP, sdp.Type)
 		if sdpErr := json.NewDecoder(r.Body).Decode(&sdp); sdpErr != nil {
 			panic(sdpErr)
 		}
@@ -158,6 +159,7 @@ func main() { //nolint:gocognit
 		panic(err)
 	}
 
+	log.Println("offer sdp", offer.SDP, offer.Type)
 	// Sets the LocalDescription, and starts our UDP listeners
 	// Note: this will start the gathering of ICE candidates
 	if err = peerConnection.SetLocalDescription(offer); err != nil {
